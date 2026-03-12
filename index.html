@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Interface — Low Validation Environments</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --accent3:   #f78166;
+      --text:      #c9d1d9;
+      --muted:     #8b949e;
+      --radius:    10px;
+      --transition: 0.25s ease;
+      --user-bg:   #1c2d3a;
+      --ai-bg:     #1c2419;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .header-text p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .badge {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(63,185,80,0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+    .badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+    }
+
+    /* ── Layout ── */
+    .layout {
+      flex: 1;
+      display: flex;
+      gap: 0;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-right: 1.5rem;
+    }
+    @media (max-width: 800px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; margin-right: 0; }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+    }
+    .panel h2 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Validation mode selector */
+    .mode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .mode-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-align: left;
+      transition: all var(--transition);
+    }
+    .mode-btn:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .mode-btn.active {
+      background: var(--surface2);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .mode-btn .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .mode-btn[data-mode="none"] .dot    { background: var(--accent2); }
+    .mode-btn[data-mode="minimal"] .dot { background: var(--accent); }
+    .mode-btn[data-mode="strict"] .dot  { background: var(--accent3); }
+
+    /* Stats panel */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.82rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-value {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    /* Info panel */
+    .info-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .info-list li {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      padding-left: 1rem;
+      position: relative;
+    }
+    .info-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* ── Chat ── */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Validation banner */
+    .validation-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.65rem 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+    }
+    .validation-banner .mode-indicator {
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .validation-banner .mode-description {
+      color: var(--muted);
+      flex: 1;
+    }
+    .validation-banner[data-mode="none"]    { border-color: rgba(63,185,80,0.4); }
+    .validation-banner[data-mode="minimal"] { border-color: rgba(88,166,255,0.4); }
+    .validation-banner[data-mode="strict"]  { border-color: rgba(247,129,102,0.4); }
+    .validation-banner[data-mode="none"] .mode-indicator    { color: var(--accent2); }
+    .validation-banner[data-mode="minimal"] .mode-indicator { color: var(--accent); }
+    .validation-banner[data-mode="strict"] .mode-indicator  { color: var(--accent3); }
+
+    /* Chat window */
+    .chat-window {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      overflow-y: auto;
+      max-height: 480px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Messages */
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      animation: msgIn 0.25s ease;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user { align-items: flex-end; }
+    .msg.ai   { align-items: flex-start; }
+    .msg.system { align-items: center; }
+
+    .msg-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .msg-bubble {
+      max-width: 80%;
+      padding: 0.7rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .msg.user .msg-bubble {
+      background: var(--user-bg);
+      border: 1px solid rgba(88,166,255,0.3);
+      color: var(--text);
+    }
+    .msg.ai .msg-bubble {
+      background: var(--ai-bg);
+      border: 1px solid rgba(63,185,80,0.3);
+      color: var(--text);
+    }
+    .msg.system .msg-bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.78rem;
+      max-width: 100%;
+      text-align: center;
+    }
+
+    /* Thinking dots */
+    .thinking {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      padding: 0.5rem 0;
+    }
+    .thinking span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: bounce 1.2s infinite;
+    }
+    .thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%           { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Validation error */
+    .validation-error {
+      font-size: 0.78rem;
+      color: var(--accent3);
+      margin-top: 0.25rem;
+      min-height: 1.1em;
+      padding-left: 0.2rem;
+    }
+
+    /* Input area */
+    .input-area {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.8rem 1rem;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-end;
+    }
+    .input-row textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      padding: 0.6rem 0.8rem;
+      resize: none;
+      min-height: 42px;
+      max-height: 140px;
+      outline: none;
+      transition: border-color var(--transition);
+      line-height: 1.5;
+    }
+    .input-row textarea:focus { border-color: var(--accent); }
+    .send-btn {
+      background: var(--accent2);
+      color: #0a1a0e;
+      border: none;
+      border-radius: 7px;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter var(--transition);
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+    .send-btn:hover   { filter: brightness(1.15); }
+    .send-btn:active  { filter: brightness(0.9); }
+    .send-btn:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      filter: none;
+    }
+    .input-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.45rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-icon">🤖</div>
+    <div class="header-text">
+      <h1>AI Explorer</h1>
+      <p>Low Validation Environment Interface</p>
+    </div>
+    <span class="badge">Active</span>
+  </header>
+
+  <div class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+      <div class="panel">
+        <h2>Validation Mode</h2>
+        <div class="mode-list">
+          <button class="mode-btn active" data-mode="none" onclick="setMode('none')">
+            <span class="dot"></span>
+            <span>
+              <strong>None</strong><br>
+              <small>No restrictions on input</small>
+            </span>
+          </button>
+          <button class="mode-btn" data-mode="minimal" onclick="setMode('minimal')">
+            <span class="dot"></span>
+            <span>
+              <strong>Minimal</strong><br>
+              <small>Length check only (≥3 chars)</small>
+            </span>
+          </button>
+          <button class="mode-btn" data-mode="strict" onclick="setMode('strict')">
+            <span class="dot"></span>
+            <span>
+              <strong>Strict</strong><br>
+              <small>Length + alphanumeric filter</small>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Session Stats</h2>
+        <div class="stat-row">
+          <span>Messages sent</span>
+          <span class="stat-value" id="stat-sent">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Blocked inputs</span>
+          <span class="stat-value" id="stat-blocked">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Mode switches</span>
+          <span class="stat-value" id="stat-switches">0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>About This Demo</h2>
+        <ul class="info-list">
+          <li>Switch modes to explore how validation gates affect AI interaction.</li>
+          <li>In <em>None</em> mode the AI accepts any input — even empty or unusual messages.</li>
+          <li>In <em>Strict</em> mode only clean alphanumeric messages pass through.</li>
+          <li>Observe which inputs are blocked and how that changes the conversation.</li>
+        </ul>
+      </div>
+
+    </aside>
+
+    <!-- ── Chat ── -->
+    <section class="chat-container" aria-label="AI chat interface">
+
+      <div class="validation-banner" id="validation-banner" data-mode="none">
+        <span class="mode-indicator" id="banner-mode">None</span>
+        <span class="mode-description" id="banner-desc">
+          All inputs accepted — no validation applied.
+        </span>
+      </div>
+
+      <div class="chat-window" id="chat-window" role="log" aria-live="polite" aria-label="Conversation">
+        <!-- Initial greeting -->
+        <div class="msg ai">
+          <span class="msg-label">AI Explorer</span>
+          <div class="msg-bubble">
+            Hello! I am an AI interface operating in a <strong>low validation environment</strong>.
+            You can type anything — no filters, no restrictions. Use the sidebar to switch
+            validation modes and observe how input constraints shape the interaction.
+            What would you like to explore?
+          </div>
+        </div>
+      </div>
+
+      <div class="validation-error" id="validation-error" role="alert" aria-live="assertive"></div>
+
+      <div class="input-area">
+        <div class="input-row">
+          <textarea
+            id="user-input"
+            placeholder="Type anything…"
+            rows="1"
+            aria-label="Your message"
+          ></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+        <div class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</div>
+      </div>
+
+    </section>
+  </div>
+
+  <footer>
+    Hello-World · AI Systems &amp; Human–Computer Interaction ·
+    Exploring validation boundaries in conversational AI
+  </footer>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let currentMode = 'none';
+    let stats = { sent: 0, blocked: 0, switches: 0 };
+
+    const modeConfig = {
+      none: {
+        label:    'None',
+        desc:     'All inputs accepted — no validation applied.',
+        validate: () => null,         // always passes
+      },
+      minimal: {
+        label:    'Minimal',
+        desc:     'Inputs must be at least 3 characters long.',
+        validate: (text) => {
+          if (text.length < 3) return 'Input must be at least 3 characters.';
+          return null;
+        },
+      },
+      strict: {
+        label:    'Strict',
+        desc:     'Inputs must be at least 5 characters and contain only letters, numbers, spaces, or the punctuation: . , ! ? \' " ( ) -',
+        validate: (text) => {
+          if (text.length < 5) return 'Input must be at least 5 characters.';
+          if (!/^[a-zA-Z0-9 .,!?'"()-]+$/.test(text))
+            return 'Only letters, numbers, spaces, and basic punctuation (.,!?\'"()-) are allowed.';
+          return null;
+        },
+      },
+    };
+
+    // ── AI response engine ───────────────────────────────────────────────────
+    const responses = {
+      greeting: [
+        'Hello there! You reached me without any input barriers — that is the nature of a low validation environment.',
+        'Hi! In this mode I receive your message exactly as you typed it.',
+        'Hey! No filters stood between your words and me.',
+      ],
+      question: [
+        'Great question. In low validation environments, the AI receives raw input — including edge cases like special characters, very short strings, or unconventional phrasing. This reveals a lot about robustness.',
+        'Interesting! Validation gaps can surface unexpected behaviour: injection-like inputs, encoding quirks, or simply messages the developer never anticipated.',
+        'That is worth exploring. When validation is absent or weak, the full complexity of human language reaches the model — for better and for worse.',
+      ],
+      validation: [
+        'Validation acts as a gatekeeper. Remove it and every keystroke — typos, symbols, emoji, edge cases — arrives unfiltered. This tests the AI\'s true generalisation ability.',
+        'Low validation means fewer assumptions about what "correct" input looks like. It broadens the input distribution but may also surface brittle failure modes.',
+        'With no validation layer, the conversation surface is maximally open. That is powerful for exploration, but real deployments often need some guardrails to handle harmful or malformed input.',
+      ],
+      empty: [
+        '(You sent an empty message. In strict mode that would have been blocked — but here, I still receive it.)',
+        '(Nothing was typed, yet the message arrived. That is low validation at work.)',
+      ],
+      special: [
+        'I noticed some special characters in your input. In strict mode those would have been rejected. Here, I process them as-is.',
+        'Interesting characters! A strict validation layer would have flagged that. In a low validation environment, such inputs pass through to the AI directly.',
+      ],
+      short: [
+        'Short input! A minimal validation rule (≥3 chars) would have caught a one- or two-character message. Right now, nothing filtered it.',
+        'Very concise. Minimal validation environments typically allow this — only the strictest policies enforce minimum length.',
+      ],
+      default: [
+        'Received. In this low validation environment your message arrived unmodified. I do my best to make sense of whatever text I receive.',
+        'Got it. No pre-processing, no sanitisation — just your raw words, exactly as typed.',
+        'Message received. This is what low validation feels like: the AI meets the user where they are, whatever form that takes.',
+        'Understood. Open input environments like this one reflect the messy, varied reality of human communication.',
+        'I read every word. Unrestricted input reveals the full richness — and unpredictability — of natural language.',
+      ],
+    };
+
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function classifyInput(text) {
+      if (!text || text.trim().length === 0) return 'empty';
+      const lower = text.toLowerCase();
+      if (/\b(hi|hello|hey|greetings|howdy)\b/.test(lower))     return 'greeting';
+      if (/[?]/.test(text) || /\b(what|how|why|when|where|is|are|does|can|will)\b/.test(lower)) return 'question';
+      if (/\b(valid|validat|filter|restrict|block|sanitiz|input|mode|strict|minimal|check)\b/.test(lower)) return 'validation';
+      if (text.trim().length <= 2) return 'short';
+      if (/[^a-zA-Z0-9 .,!?'"()-]/.test(text)) return 'special';
+      return 'default';
+    }
+
+    function generateReply(text) {
+      const category = classifyInput(text);
+      return pickRandom(responses[category] || responses.default);
+    }
+
+    // ── DOM helpers ──────────────────────────────────────────────────────────
+    function appendMessage(role, content, isThinking = false) {
+      const chatWindow = document.getElementById('chat-window');
+
+      const msg = document.createElement('div');
+      msg.className = `msg ${role}`;
+
+      const label = document.createElement('span');
+      label.className = 'msg-label';
+      label.textContent = role === 'user' ? 'You' : role === 'ai' ? 'AI Explorer' : 'System';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+
+      if (isThinking) {
+        bubble.innerHTML = '<span class="thinking"><span></span><span></span><span></span></span>';
+        bubble.dataset.thinking = 'true';
+      } else {
+        bubble.textContent = content;
+      }
+
+      msg.appendChild(label);
+      msg.appendChild(bubble);
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+
+      return msg;
+    }
+
+    function updateStats() {
+      document.getElementById('stat-sent').textContent    = stats.sent;
+      document.getElementById('stat-blocked').textContent = stats.blocked;
+      document.getElementById('stat-switches').textContent = stats.switches;
+    }
+
+    // ── Mode switching ───────────────────────────────────────────────────────
+    function setMode(mode) {
+      if (mode === currentMode) return;
+
+      currentMode = mode;
+      stats.switches++;
+
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
+
+      const cfg = modeConfig[mode];
+      const banner = document.getElementById('validation-banner');
+      banner.dataset.mode = mode;
+      document.getElementById('banner-mode').textContent = cfg.label;
+      document.getElementById('banner-desc').textContent = cfg.desc;
+
+      document.getElementById('validation-error').textContent = '';
+
+      appendMessage('system', `Validation mode changed to "${cfg.label}". ${cfg.desc}`);
+      updateStats();
+    }
+
+    // ── Send message ─────────────────────────────────────────────────────────
+    function sendMessage() {
+      const inputEl  = document.getElementById('user-input');
+      const errorEl  = document.getElementById('validation-error');
+      const sendBtn  = document.getElementById('send-btn');
+      const rawText  = inputEl.value;
+      const trimmed  = rawText.trim();
+
+      // Validate
+      const error = modeConfig[currentMode].validate(trimmed);
+      if (error !== null) {
+        errorEl.textContent = `⚠ ${error}`;
+        stats.blocked++;
+        updateStats();
+        inputEl.focus();
+        return;
+      }
+
+      errorEl.textContent = '';
+      stats.sent++;
+      updateStats();
+
+      // Show user message
+      const displayText = trimmed.length === 0 ? '(empty message)' : trimmed;
+      appendMessage('user', displayText);
+
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      // Show thinking indicator, then AI reply
+      const thinkingMsg = appendMessage('ai', '', true);
+
+      const delay = 500 + Math.random() * 700;
+      setTimeout(() => {
+        const reply = generateReply(trimmed);
+        thinkingMsg.querySelector('[data-thinking]').textContent = reply;
+        delete thinkingMsg.querySelector('.msg-bubble').dataset.thinking;
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }, delay);
+    }
+
+    // ── Input auto-resize & keyboard shortcuts ───────────────────────────────
+    const inputEl = document.getElementById('user-input');
+
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+      document.getElementById('validation-error').textContent = '';
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

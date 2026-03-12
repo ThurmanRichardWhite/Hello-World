@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>From Static Button to Empathic AI</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    #2e3149;
+      --accent1:   #4f8ef7;   /* stage 1 blue  */
+      --accent2:   #a855f7;   /* stage 2 purple */
+      --accent3:   #22d3a0;   /* stage 3 teal   */
+      --text:      #e2e8f0;
+      --muted:     #8892a4;
+      --radius:    12px;
+      --transition: 0.3s ease;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 52ch;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Stage nav ── */
+    .stage-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .stage-nav button {
+      padding: 0.5rem 1.2rem;
+      border-radius: 9999px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all var(--transition);
+    }
+    .stage-nav button.active,
+    .stage-nav button:hover {
+      color: var(--text);
+    }
+    .stage-nav button[data-target="stage1"].active  { border-color: var(--accent1); color: var(--accent1); }
+    .stage-nav button[data-target="stage2"].active  { border-color: var(--accent2); color: var(--accent2); }
+    .stage-nav button[data-target="stage3"].active  { border-color: var(--accent3); color: var(--accent3); }
+
+    /* ── Stage panels ── */
+    .stages {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .stage {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    .stage.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .stage1 .card-label { color: var(--accent1); }
+    .stage2 .card-label { color: var(--accent2); }
+    .stage3 .card-label { color: var(--accent3); }
+
+    .card h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .card p  { color: var(--muted); font-size: 0.92rem; line-height: 1.7; }
+
+    /* ── Demo areas ── */
+    .demo {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-top: 1.2rem;
+    }
+
+    /* ── Shared button style ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: transform 0.1s ease, filter 0.2s ease;
+    }
+    .btn:hover  { filter: brightness(1.15); }
+    .btn:active { transform: scale(0.96); }
+
+    /* Stage 1 */
+    .btn-stage1 { background: var(--accent1); color: #fff; }
+
+    /* Stage 2 */
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .input-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.6rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .input-row input:focus { border-color: var(--accent2); }
+    .btn-stage2 { background: var(--accent2); color: #fff; }
+
+    /* Stage 3 */
+    .empathy-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+      margin-bottom: 0.8rem;
+      transition: border-color var(--transition);
+      font-family: inherit;
+    }
+    .empathy-input:focus { border-color: var(--accent3); }
+    .btn-stage3 { background: var(--accent3); color: #0a1a14; }
+
+    /* ── Response boxes ── */
+    .response {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      min-height: 2.6rem;
+      transition: all var(--transition);
+    }
+    .response:empty { display: none; }
+    .stage1 .response { background: #1a2540; border-left: 3px solid var(--accent1); }
+    .stage2 .response { background: #1e1432; border-left: 3px solid var(--accent2); }
+    .stage3 .response { background: #0e2520; border-left: 3px solid var(--accent3); }
+
+    /* Thinking dots */
+    .thinking { display: inline-flex; gap: 4px; align-items: center; }
+    .thinking span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent2);
+      animation: bounce 1.2s infinite;
+    }
+    .thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%           { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Emotion badge */
+    .emotion-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 9999px;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Progress bar (stage 3) ── */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent3);
+      border-radius: 9999px;
+      transition: width 0.6s ease;
+      width: 0%;
+    }
+
+    /* ── Insight section ── */
+    .insight {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+    }
+    .insight h3 { font-size: 0.92rem; margin-bottom: 0.8rem; color: var(--muted); }
+    .insight ul { list-style: none; }
+    .insight li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      padding: 0.35rem 0;
+    }
+    .insight li::before {
+      content: '→';
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .stage1 .insight li::before { color: var(--accent1); }
+    .stage2 .insight li::before { color: var(--accent2); }
+    .stage3 .insight li::before { color: var(--accent3); }
+
+    /* ── Arrow connector ── */
+    .connector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 1.8rem auto;
+      max-width: 500px;
+    }
+    .connector-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+      opacity: 0.4;
+    }
+    .connector span {
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 4rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>From Static Button to Empathic AI</h1>
+    <p>A three-stage demonstration of the evolution of human–computer interaction — from deterministic output to emotionally intelligent conversation.</p>
+  </header>
+
+  <!-- Stage navigation tabs -->
+  <nav class="stage-nav" aria-label="Stage navigation">
+    <button data-target="stage1" class="active">① Static Button</button>
+    <button data-target="stage2">② Simulated Intelligence</button>
+    <button data-target="stage3">③ Empathic AI</button>
+  </nav>
+
+  <main class="stages">
+
+    <!-- ════════════════════════════
+         STAGE 1 — Static Button
+         ════════════════════════════ -->
+    <section id="stage1" class="stage stage1 active" aria-labelledby="stage1-title">
+      <div class="card">
+        <div class="card-label">Stage 1</div>
+        <h2 id="stage1-title">The Static Button</h2>
+        <p>
+          The simplest form of human–computer interaction: press a button, receive a
+          hardcoded response. Every user, every time, sees <em>exactly</em> the same output.
+          There is no memory, no context, and no adaptation.
+        </p>
+
+        <div class="demo">
+          <button class="btn btn-stage1" id="static-btn" onclick="staticClick()">
+            Say Hello
+          </button>
+          <div class="response" id="static-response" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <h3>Design characteristics</h3>
+        <ul>
+          <li>Output is entirely predetermined at compile time.</li>
+          <li>Zero context awareness — the system has no knowledge of who the user is.</li>
+          <li>Interaction is one-way: stimulus → fixed response.</li>
+          <li>Highly reliable and predictable, but incapable of serving diverse needs.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════
+         STAGE 2 — Simulated Intelligence
+         ════════════════════════════ -->
+    <section id="stage2" class="stage stage2" aria-labelledby="stage2-title">
+      <div class="card">
+        <div class="card-label">Stage 2</div>
+        <h2 id="stage2-title">Simulated Intelligence</h2>
+        <p>
+          Rule-based systems create the <em>appearance</em> of intelligence. Pattern matching
+          on keywords, if-else trees, and scripted branches let the interface tailor its
+          reply — but the knowledge is still hard-wired by a developer, not learned.
+        </p>
+
+        <div class="demo">
+          <div class="input-row">
+            <input
+              type="text"
+              id="sim-input"
+              placeholder="Type something (try: hello, help, weather, joke, bye)…"
+              aria-label="Message"
+              onkeydown="if(event.key==='Enter') simulateClick()"
+            />
+            <button class="btn btn-stage2" onclick="simulateClick()">Ask</button>
+          </div>
+          <div class="response" id="sim-response" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <h3>Design characteristics</h3>
+        <ul>
+          <li>Keyword and pattern matching produces contextually relevant replies.</li>
+          <li>Response variety is bounded by what the developer anticipated.</li>
+          <li>Gives the illusion of understanding without genuine comprehension.</li>
+          <li>Early chatbots (ELIZA, ALICE) and IVR phone trees are canonical examples.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════
+         STAGE 3 — Empathic AI
+         ════════════════════════════ -->
+    <section id="stage3" class="stage stage3" aria-labelledby="stage3-title">
+      <div class="card">
+        <div class="card-label">Stage 3</div>
+        <h2 id="stage3-title">Empathic AI</h2>
+        <p>
+          A truly empathic AI reads the emotional tone of a message, reasons about
+          context and sentiment, and crafts a response that addresses both the <em>content</em>
+          and the <em>feeling</em> behind the words. It treats people as whole humans, not
+          just query sources.
+        </p>
+
+        <div class="demo">
+          <textarea
+            class="empathy-input"
+            id="empathy-input"
+            placeholder="Share what's on your mind…"
+            aria-label="Message to empathic AI"
+          ></textarea>
+
+          <div class="progress-row" id="analysis-row" style="display:none;">
+            <span>Analyzing sentiment</span>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <span id="progress-pct">0%</span>
+          </div>
+
+          <button class="btn btn-stage3" onclick="empathyClick()" style="margin-top:0.6rem;">
+            Send
+          </button>
+          <div class="response" id="empathy-response" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <h3>Design characteristics</h3>
+        <ul>
+          <li>Sentiment analysis detects emotional valence (positive, negative, neutral, distressed).</li>
+          <li>Responses are modulated in tone — supportive when the user is struggling, celebratory when they are thriving.</li>
+          <li>The system maintains conversational context and remembers prior exchanges.</li>
+          <li>Bridges affective computing, NLP, and human-centred design into a unified experience.</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Progression summary always visible below the active stage -->
+  <div class="connector">
+    <div class="connector-line"></div>
+    <span>Static → Rule-based → Empathic</span>
+    <div class="connector-line"></div>
+  </div>
+
+  <footer>
+    <p>Hello-World · AI Systems &amp; Human–Computer Interaction</p>
+    <p>A presentation demonstration of the progression from deterministic interfaces to empathic AI.</p>
+  </footer>
+
+  <script>
+    // ── Stage navigation ──────────────────────────────────────────────────────
+    document.querySelectorAll('.stage-nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+
+        document.querySelectorAll('.stage-nav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ── Stage 1: Static button ────────────────────────────────────────────────
+    function staticClick() {
+      const el = document.getElementById('static-response');
+      el.textContent = 'Hello, World!';
+    }
+
+    // ── Stage 2: Simulated intelligence ──────────────────────────────────────
+    const rules = [
+      { pattern: /\b(hi|hello|hey|greetings)\b/i,
+        responses: [
+          'Hello! How can I assist you today?',
+          'Hi there! What can I help you with?',
+          'Hey! Great to hear from you.'
+        ]
+      },
+      { pattern: /\b(help|support|assist)\b/i,
+        responses: [
+          'Sure — I can answer questions on weather, jokes, or general greetings. What do you need?',
+          'I am here to help! Try asking about the weather or requesting a joke.'
+        ]
+      },
+      { pattern: /\b(weather|forecast|temperature|rain|sunny)\b/i,
+        responses: [
+          'The weather engine says: partly cloudy with a high of 72 °F. (Note: this is a scripted placeholder!)',
+          'Looks like a pleasant day — 68 °F with light winds.'
+        ]
+      },
+      { pattern: /\b(joke|funny|laugh|humor)\b/i,
+        responses: [
+          'Why do programmers prefer dark mode? Because light attracts bugs! 🐛',
+          'Why did the AI break up with the database? It found someone with better relations. 🤣',
+          'I told a joke about neural networks once — it went over everyone\'s head by several layers.'
+        ]
+      },
+      { pattern: /\b(bye|goodbye|see you|later|ciao)\b/i,
+        responses: [
+          'Goodbye! Come back anytime.',
+          'See you later! 👋',
+          'Take care!'
+        ]
+      },
+      { pattern: /\b(thanks|thank you|thx)\b/i,
+        responses: [
+          'You are welcome!',
+          'Happy to help!',
+          'Anytime!'
+        ]
+      },
+      { pattern: /\b(name|who are you|what are you)\b/i,
+        responses: [
+          'I am SimBot — a rule-based conversational system. I understand a fixed set of keywords.',
+          'I go by SimBot. My responses are scripted, not learned — Stage 2 of the AI progression demo.'
+        ]
+      }
+    ];
+
+    const fallbacks = [
+      'I did not quite catch that. Try: hello, help, weather, joke, or bye.',
+      'Hmm, I do not have a rule for that. My knowledge is limited to what my developer hard-coded.',
+      'That is outside my scripted vocabulary. Try a different keyword!'
+    ];
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function simulateClick() {
+      const input = document.getElementById('sim-input');
+      const responseEl = document.getElementById('sim-response');
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      // Show thinking indicator
+      responseEl.innerHTML = '<span class="thinking"><span></span><span></span><span></span></span>';
+
+      setTimeout(() => {
+        let reply = null;
+        for (const rule of rules) {
+          if (rule.pattern.test(text)) {
+            reply = pick(rule.responses);
+            break;
+          }
+        }
+        responseEl.textContent = reply ?? pick(fallbacks);
+        input.value = '';
+        input.focus();
+      }, 600 + Math.random() * 400);
+    }
+
+    // ── Stage 3: Empathic AI ──────────────────────────────────────────────────
+
+    // Lightweight client-side sentiment analysis
+    function analyseSentiment(text) {
+      const lower = text.toLowerCase();
+
+      const distressWords = [
+        'sad', 'depressed', 'anxious', 'worried', 'scared', 'hopeless', 'alone',
+        'terrible', 'awful', 'horrible', 'hate', 'crying', 'hurt', 'pain',
+        'stressed', 'overwhelmed', 'exhausted', 'broken', 'lost', 'helpless'
+      ];
+      const positiveWords = [
+        'happy', 'great', 'excited', 'amazing', 'wonderful', 'love', 'joy',
+        'fantastic', 'excellent', 'good', 'awesome', 'thrilled', 'proud',
+        'grateful', 'blessed', 'hopeful', 'accomplished', 'confident'
+      ];
+      const neutralCuriousWords = [
+        'what', 'how', 'why', 'when', 'where', 'curious', 'wonder', 'think',
+        'question', 'understand', 'explain', 'tell me', 'interested'
+      ];
+      const angryWords = [
+        'angry', 'furious', 'frustrated', 'mad', 'rage', 'annoyed', 'irritated',
+        'resentful', 'outraged', 'livid'
+      ];
+
+      const words = lower.split(/\W+/);
+      let score = { distress: 0, positive: 0, curious: 0, angry: 0 };
+
+      words.forEach(w => {
+        if (distressWords.includes(w))  score.distress++;
+        if (positiveWords.includes(w))  score.positive++;
+        if (neutralCuriousWords.includes(w)) score.curious++;
+        if (angryWords.includes(w))     score.angry++;
+      });
+
+      // Also check phrases
+      if (/\b(not okay|not ok|can't cope|can\'t cope|giving up|no hope|feel like giving)\b/.test(lower)) score.distress += 3;
+      if (/\b(so happy|really great|absolutely love|so proud)\b/.test(lower)) score.positive += 2;
+
+      const dominant = Object.entries(score).reduce((a, b) => a[1] >= b[1] ? a : b);
+      if (dominant[1] === 0) return 'neutral';
+      return dominant[0];
+    }
+
+    const empathyReplies = {
+      distress: [
+        {
+          badge: '💙 Supportive',
+          color: '#1e40af',
+          bg: '#dbeafe',
+          text: 'I can hear that you are going through something difficult right now. Your feelings are completely valid. It takes courage to put those words out there — please know you are not alone. Take things one small step at a time, and do not hesitate to reach out to someone you trust.'
+        },
+        {
+          badge: '💙 Empathetic',
+          color: '#1e40af',
+          bg: '#dbeafe',
+          text: 'Thank you for sharing that with me. What you are feeling sounds genuinely hard. I want you to know I am here, and your wellbeing matters. Sometimes just naming what we feel is the first step toward getting through it.'
+        }
+      ],
+      positive: [
+        {
+          badge: '🌟 Celebratory',
+          color: '#065f46',
+          bg: '#d1fae5',
+          text: 'That is wonderful to hear! Your positive energy really comes through in your words. Moments like these are worth celebrating — enjoy it fully. What is driving this good feeling? I would love to hear more!'
+        },
+        {
+          badge: '✨ Joyful',
+          color: '#065f46',
+          bg: '#d1fae5',
+          text: 'I love the energy here! It sounds like things are going really well for you, and that is genuinely great. Happiness is contagious — keep sharing it!'
+        }
+      ],
+      curious: [
+        {
+          badge: '🧠 Thoughtful',
+          color: '#4c1d95',
+          bg: '#ede9fe',
+          text: 'That is a great question. Curiosity is one of the most powerful human traits — it drives discovery, growth, and connection. I appreciate you thinking deeply about this. Let us explore it together: what angle interests you most?'
+        },
+        {
+          badge: '🔍 Inquisitive',
+          color: '#4c1d95',
+          bg: '#ede9fe',
+          text: 'I sense a curious, open mind here. Questions like yours are exactly what drives progress in AI and human understanding. What specifically made you want to dig into this topic?'
+        }
+      ],
+      angry: [
+        {
+          badge: '🔥 De-escalating',
+          color: '#7c2d12',
+          bg: '#fee2e2',
+          text: 'It sounds like you are feeling really frustrated, and that frustration makes sense given what you are describing. Anger often signals that something important to you has been threatened or ignored. I am listening — what would be most helpful right now?'
+        },
+        {
+          badge: '🌊 Calming',
+          color: '#7c2d12',
+          bg: '#fee2e2',
+          text: 'I can feel the intensity in your words. Whatever happened, your reaction is understandable. Let us slow down for a moment. Take a breath. I am here, and we can work through this together.'
+        }
+      ],
+      neutral: [
+        {
+          badge: '🤝 Engaged',
+          color: '#374151',
+          bg: '#f3f4f6',
+          text: 'Thank you for sharing that. I am here and fully engaged with what you have said. Whether you want to explore an idea, talk something through, or just be heard — I am ready to help in whatever way feels most useful.'
+        },
+        {
+          badge: '💬 Present',
+          color: '#374151',
+          bg: '#f3f4f6',
+          text: 'I hear you. Every message carries context and meaning beyond the words themselves. I am paying attention — please continue, and I will do my best to respond with care and understanding.'
+        }
+      ]
+    };
+
+    function empathyClick() {
+      const input = document.getElementById('empathy-input');
+      const responseEl = document.getElementById('empathy-response');
+      const analysisRow = document.getElementById('analysis-row');
+      const progressFill = document.getElementById('progress-fill');
+      const progressPct = document.getElementById('progress-pct');
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      responseEl.innerHTML = '';
+
+      // Animate progress bar
+      analysisRow.style.display = 'flex';
+      progressFill.style.width = '0%';
+      progressPct.textContent = '0%';
+
+      const steps = [15, 35, 58, 74, 91, 100];
+      let i = 0;
+      const tick = setInterval(() => {
+        if (i >= steps.length) { clearInterval(tick); return; }
+        progressFill.style.width = steps[i] + '%';
+        progressPct.textContent = steps[i] + '%';
+        i++;
+      }, 160);
+
+      setTimeout(() => {
+        clearInterval(tick);
+        progressFill.style.width = '100%';
+        progressPct.textContent = '100%';
+
+        const sentiment = analyseSentiment(text);
+        const reply = pick(empathyReplies[sentiment]);
+
+        setTimeout(() => {
+          analysisRow.style.display = 'none';
+          progressFill.style.width = '0%';
+
+          const badge = document.createElement('div');
+          badge.className = 'emotion-badge';
+          badge.style.background = reply.bg;
+          badge.style.color = reply.color;
+          badge.textContent = reply.badge;
+
+          responseEl.innerHTML = '';
+          responseEl.appendChild(badge);
+          responseEl.appendChild(document.createTextNode(reply.text));
+        }, 400);
+
+      }, steps.length * 160 + 200);
+    }
+
+    // Allow Enter (without Shift) in empathy textarea to submit
+    document.getElementById('empathy-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        empathyClick();
+      }
+    });
+  </script>
+</body>
+</html>
